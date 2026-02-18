@@ -4,7 +4,9 @@ MCP server for the [Open Food Facts](https://world.openfoodfacts.org/) API - sea
 
 ## Use Cases
 
-**Look up a product**: "What's in this product with barcode 3017620422003?" -> fetches Nutella's ingredients, Nutri-Score, and nutrition data.
+**Look up a product by name**: "How many calories in a Sainsbury's buffalo chicken wrap?" -> searches by name, finds the product, and returns nutrition data.
+
+**Look up a product by barcode**: "What's in this product with barcode 3017620422003?" -> fetches Nutella's ingredients, Nutri-Score, and nutrition data.
 
 **Find healthy options**: "Search for breakfast cereals with Nutri-Score A" -> searches with category and nutrition grade filters.
 
@@ -15,14 +17,14 @@ MCP server for the [Open Food Facts](https://world.openfoodfacts.org/) API - sea
 ## Setup
 
 ```bash
-claude mcp add openfoodfacts-mcp -e OFF_USER_AGENT="openfoodfacts-mcp/1.0.0 (you@example.com)" -- npx -y openfoodfacts-mcp
+claude mcp add openfoodfacts-mcp -e OFF_USER_AGENT="openfoodfacts-mcp/1.1.0 (you@example.com)" -- npx -y openfoodfacts-mcp
 ```
 
 For write operations (adding/editing products, uploading images), also set:
 
 ```bash
 claude mcp add openfoodfacts-mcp \
-  -e OFF_USER_AGENT="openfoodfacts-mcp/1.0.0 (you@example.com)" \
+  -e OFF_USER_AGENT="openfoodfacts-mcp/1.1.0 (you@example.com)" \
   -e OFF_USER_ID="your-username" \
   -e OFF_PASSWORD="your-password" \
   -- npx -y openfoodfacts-mcp
@@ -32,7 +34,7 @@ Or with HTTP transport:
 
 ```bash
 # Start the server
-MCP_TRANSPORT=http PORT=3000 OFF_USER_AGENT="openfoodfacts-mcp/1.0.0 (you@example.com)" npx -y openfoodfacts-mcp
+MCP_TRANSPORT=http PORT=3000 OFF_USER_AGENT="openfoodfacts-mcp/1.1.0 (you@example.com)" npx -y openfoodfacts-mcp
 
 # Add to Claude
 claude mcp add --transport http openfoodfacts-mcp http://localhost:3000/mcp
@@ -52,7 +54,7 @@ claude mcp add --transport http openfoodfacts-mcp http://localhost:3000/mcp
 | Tool | Description | Auth |
 |------|-------------|------|
 | `get_product` | Get product info by barcode | No |
-| `search_products` | Search products with filters | No |
+| `search_products` | Search products by name or keyword | No |
 | `autocomplete` | Autocomplete brands, categories, labels, etc. | No |
 | `add_or_edit_product` | Add or update a product | Yes |
 | `upload_image` | Upload a product image | Yes |
