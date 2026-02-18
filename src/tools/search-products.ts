@@ -5,6 +5,17 @@ import {jsonResult} from '../utils/response.js';
 import {strictSchemaWithAliases} from '../utils/schema.js';
 import {offGet} from '../utils/off-api.js';
 
+const DEFAULT_FIELDS = [
+	'code',
+	'product_name',
+	'brands',
+	'categories',
+	'nutriscore_grade',
+	'nova_group',
+	'image_url',
+	'quantity',
+];
+
 const inputSchema = strictSchemaWithAliases(
 	{
 		query: z.string().optional().describe('Full-text search query'),
@@ -21,7 +32,7 @@ const inputSchema = strictSchemaWithAliases(
 		]).optional().describe('Sort order'),
 		page: z.number().int().min(1).default(1).describe('Page number (default: 1)'),
 		page_size: z.number().int().min(1).max(100).default(24).describe('Results per page (default: 24, max: 100)'),
-		fields: z.array(z.string()).optional().describe('Fields to return per product'),
+		fields: z.array(z.string()).optional().describe(`Fields to return per product. Defaults to: ${DEFAULT_FIELDS.join(', ')}`),
 	},
 	{
 		q: 'query',
@@ -34,7 +45,7 @@ export function registerSearchProducts(server: McpServer, config: Config): void 
 		'search_products',
 		{
 			title: 'Search products',
-			description: 'Search the Open Food Facts database. Supports full-text search and filtering by category, brand, and Nutri-Score.',
+			description: 'Search the Open Food Facts database by name or keywords. Supports full-text search and filtering by category, brand, and Nutri-Score. Use get_product to see full details for a specific product.',
 			inputSchema,
 			annotations: {
 				readOnlyHint: true,
@@ -45,6 +56,8 @@ export function registerSearchProducts(server: McpServer, config: Config): void 
 				page: String(args.page),
 				page_size: String(args.page_size),
 				json: '1',
+				search_simple: '1',
+				action: 'process',
 			};
 
 			if (args.query) {
@@ -67,11 +80,10 @@ export function registerSearchProducts(server: McpServer, config: Config): void 
 				params.sort_by = args.sort_by;
 			}
 
-			if (args.fields) {
-				params.fields = args.fields.join(',');
-			}
+			const fields = args.fields ?? DEFAULT_FIELDS;
+			params.fields = fields.join(',');
 
-			const data = await offGet(config, '/api/v2/search', params);
+			const data = await offGet(config, '/cgi/search.pl', params);
 
 			return jsonResult(data as Record<string, unknown>);
 		},

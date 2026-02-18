@@ -12,10 +12,16 @@ GET /api/v2/product/{barcode}.json
 - Query params: fields (comma-separated list of fields to return)
 - Example: /api/v2/product/3017620422003.json?fields=product_name,brands,nutriscore_grade
 
-### Search products
-GET /api/v2/search
-- Query params: search_terms, categories_tags, brands_tags, nutrition_grades_tags, sort_by, page, page_size, fields, json=1
+### Search products (full-text)
+GET /cgi/search.pl
+- Query params: search_terms, search_simple=1, action=process, json=1, categories_tags, brands_tags, nutrition_grades_tags, sort_by, page, page_size, fields
 - sort_by options: popularity, product_name, created_t, last_modified_t, nutriscore_score, nova_score
+- Example: /cgi/search.pl?search_terms=nutella&search_simple=1&action=process&json=1&fields=product_name,brands
+
+### Search products (tag-based filtering only)
+GET /api/v2/search
+- Query params: categories_tags, brands_tags, nutrition_grades_tags, sort_by, page, page_size, fields
+- Note: Does NOT support full-text search (search_terms parameter is ignored)
 
 ### Taxonomy suggestions (autocomplete)
 GET /api/v3/taxonomy_suggestions
