@@ -1,0 +1,92 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.domdomegg/openfoodfacts-mcp",
+  "title": "Open Food Facts",
+  "description": "Search and contribute to the Open Food Facts database.",
+  "websiteUrl": "https://github.com/domdomegg/openfoodfacts-mcp#readme",
+  "repository": {
+    "url": "https://github.com/domdomegg/openfoodfacts-mcp.git",
+    "source": "github"
+  },
+  "version": "{{VERSION}}",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "openfoodfacts-mcp",
+      "version": "{{VERSION}}",
+      "runtimeHint": "npx",
+      "environmentVariables": [
+        {
+          "name": "OFF_USER_AGENT",
+          "description": "User-Agent string in format 'AppName/Version (email)'. Required by the Open Food Facts API.",
+          "isRequired": true,
+          "isSecret": false
+        },
+        {
+          "name": "OFF_USER_ID",
+          "description": "Open Food Facts user ID (optional, needed for write operations).",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "OFF_PASSWORD",
+          "description": "Open Food Facts password (optional, needed for write operations).",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "OFF_COUNTRY",
+          "description": "Country subdomain (default: 'world').",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ],
+      "transport": {
+        "type": "stdio"
+      }
+    },
+    {
+      "registryType": "npm",
+      "identifier": "openfoodfacts-mcp",
+      "version": "{{VERSION}}",
+      "runtimeHint": "npx",
+      "environmentVariables": [
+        {
+          "name": "MCP_TRANSPORT",
+          "description": "Transport type.",
+          "isRequired": true,
+          "isSecret": false,
+          "value": "http"
+        },
+        {
+          "name": "OFF_USER_AGENT",
+          "description": "User-Agent string in format 'AppName/Version (email)'. Required by the Open Food Facts API.",
+          "isRequired": true,
+          "isSecret": false
+        },
+        {
+          "name": "OFF_USER_ID",
+          "description": "Open Food Facts user ID (optional, needed for write operations).",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "OFF_PASSWORD",
+          "description": "Open Food Facts password (optional, needed for write operations).",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "OFF_COUNTRY",
+          "description": "Country subdomain (default: 'world').",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ],
+      "transport": {
+        "type": "streamable-http",
+        "url": "http://localhost:3000/mcp"
+      }
+    }
+  ]
+}

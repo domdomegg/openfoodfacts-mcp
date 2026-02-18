@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: read
+      contents: write
       id-token: write
     env:
       CI: true
@@ -58,6 +58,11 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build --if-present
+      - name: Update server.json version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          sed "s/{{VERSION}}/$VERSION/g" server.json > server.json.tmp
+          mv server.json.tmp server.json
       - uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: 'projects/457105351064/locations/global/workloadIdentityPools/github-secrets-pool/providers/github-secrets-github'
@@ -68,7 +73,20 @@ jobs:
           token=$(gcloud secrets versions access latest --secret=npm-token --project=gcp-github-secrets)
           echo "::add-mask::$token"
           echo "token=$token" >> "$GITHUB_OUTPUT"
-      - name: Publish ${{ github.ref }}
+      - name: Publish to NPM
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ steps.npm-token.outputs.token }}
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+      - name: Authenticate to MCP Registry
+        run: ./mcp-publisher login github-oidc
+      - name: Publish server to MCP Registry
+        run: ./mcp-publisher publish
