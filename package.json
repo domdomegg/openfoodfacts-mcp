@@ -1,6 +1,6 @@
 {
   "name": "openfoodfacts-mcp",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MCP server for the Open Food Facts API",
   "license": "MIT",
   "author": "Adam Jones (domdomegg)",
