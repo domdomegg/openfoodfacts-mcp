@@ -17,14 +17,14 @@ MCP server for the [Open Food Facts](https://world.openfoodfacts.org/) API - sea
 ## Setup
 
 ```bash
-claude mcp add openfoodfacts-mcp -e OFF_USER_AGENT="openfoodfacts-mcp/1.1.0 (you@example.com)" -- npx -y openfoodfacts-mcp
+claude mcp add openfoodfacts-mcp -e OFF_USER_AGENT="openfoodfacts-mcp/1.2.0 (you@example.com)" -- npx -y openfoodfacts-mcp
 ```
 
 For write operations (adding/editing products, uploading images), also set:
 
 ```bash
 claude mcp add openfoodfacts-mcp \
-  -e OFF_USER_AGENT="openfoodfacts-mcp/1.1.0 (you@example.com)" \
+  -e OFF_USER_AGENT="openfoodfacts-mcp/1.2.0 (you@example.com)" \
   -e OFF_USER_ID="your-username" \
   -e OFF_PASSWORD="your-password" \
   -- npx -y openfoodfacts-mcp
@@ -34,7 +34,7 @@ Or with HTTP transport:
 
 ```bash
 # Start the server
-MCP_TRANSPORT=http PORT=3000 OFF_USER_AGENT="openfoodfacts-mcp/1.1.0 (you@example.com)" npx -y openfoodfacts-mcp
+MCP_TRANSPORT=http PORT=3000 OFF_USER_AGENT="openfoodfacts-mcp/1.2.0 (you@example.com)" npx -y openfoodfacts-mcp
 
 # Add to Claude
 claude mcp add --transport http openfoodfacts-mcp http://localhost:3000/mcp
