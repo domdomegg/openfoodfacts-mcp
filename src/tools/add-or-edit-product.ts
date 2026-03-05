@@ -96,34 +96,104 @@ Use upload_image afterwards to attach photos of the front, ingredients panel, an
 				code: args.barcode,
 			};
 
-			if (args.product_name !== undefined) body.product_name = args.product_name;
-			if (args.generic_name !== undefined) body.generic_name = args.generic_name;
-			if (args.brands !== undefined) body.brands = args.brands;
-			if (args.quantity !== undefined) body.quantity = args.quantity;
-			if (args.categories !== undefined) body.categories = args.categories;
-			if (args.labels !== undefined) body.labels = args.labels;
-			if (args.ingredients_text !== undefined) body.ingredients_text = args.ingredients_text;
-			if (args.allergens !== undefined) body.allergens = args.allergens;
-			if (args.traces !== undefined) body.traces = args.traces;
-			if (args.origins !== undefined) body.origins = args.origins;
-			if (args.emb_codes !== undefined) body.emb_codes = args.emb_codes;
-			if (args.manufacturing_places !== undefined) body.manufacturing_places = args.manufacturing_places;
-			if (args.countries !== undefined) body.countries = args.countries;
-			if (args.stores !== undefined) body.stores = args.stores;
-			if (args.serving_size !== undefined) body.serving_size = args.serving_size;
+			if (args.product_name !== undefined) {
+				body.product_name = args.product_name;
+			}
+
+			if (args.generic_name !== undefined) {
+				body.generic_name = args.generic_name;
+			}
+
+			if (args.brands !== undefined) {
+				body.brands = args.brands;
+			}
+
+			if (args.quantity !== undefined) {
+				body.quantity = args.quantity;
+			}
+
+			if (args.categories !== undefined) {
+				body.categories = args.categories;
+			}
+
+			if (args.labels !== undefined) {
+				body.labels = args.labels;
+			}
+
+			if (args.ingredients_text !== undefined) {
+				body.ingredients_text = args.ingredients_text;
+			}
+
+			if (args.allergens !== undefined) {
+				body.allergens = args.allergens;
+			}
+
+			if (args.traces !== undefined) {
+				body.traces = args.traces;
+			}
+
+			if (args.origins !== undefined) {
+				body.origins = args.origins;
+			}
+
+			if (args.emb_codes !== undefined) {
+				body.emb_codes = args.emb_codes;
+			}
+
+			if (args.manufacturing_places !== undefined) {
+				body.manufacturing_places = args.manufacturing_places;
+			}
+
+			if (args.countries !== undefined) {
+				body.countries = args.countries;
+			}
+
+			if (args.stores !== undefined) {
+				body.stores = args.stores;
+			}
+
+			if (args.serving_size !== undefined) {
+				body.serving_size = args.serving_size;
+			}
 
 			if (args.nutrition) {
 				const n = args.nutrition;
 				body.nutrition_data_per = n.per;
-				if (n.energy_kj !== undefined) body['nutriment_energy-kj'] = String(n.energy_kj);
-				if (n.energy_kcal !== undefined) body['nutriment_energy-kcal'] = String(n.energy_kcal);
-				if (n.fat !== undefined) body.nutriment_fat = String(n.fat);
-				if (n.saturated_fat !== undefined) body['nutriment_saturated-fat'] = String(n.saturated_fat);
-				if (n.carbohydrates !== undefined) body.nutriment_carbohydrates = String(n.carbohydrates);
-				if (n.sugars !== undefined) body.nutriment_sugars = String(n.sugars);
-				if (n.fiber !== undefined) body.nutriment_fiber = String(n.fiber);
-				if (n.proteins !== undefined) body.nutriment_proteins = String(n.proteins);
-				if (n.salt !== undefined) body.nutriment_salt = String(n.salt);
+				if (n.energy_kj !== undefined) {
+					body['nutriment_energy-kj'] = String(n.energy_kj);
+				}
+
+				if (n.energy_kcal !== undefined) {
+					body['nutriment_energy-kcal'] = String(n.energy_kcal);
+				}
+
+				if (n.fat !== undefined) {
+					body.nutriment_fat = String(n.fat);
+				}
+
+				if (n.saturated_fat !== undefined) {
+					body['nutriment_saturated-fat'] = String(n.saturated_fat);
+				}
+
+				if (n.carbohydrates !== undefined) {
+					body.nutriment_carbohydrates = String(n.carbohydrates);
+				}
+
+				if (n.sugars !== undefined) {
+					body.nutriment_sugars = String(n.sugars);
+				}
+
+				if (n.fiber !== undefined) {
+					body.nutriment_fiber = String(n.fiber);
+				}
+
+				if (n.proteins !== undefined) {
+					body.nutriment_proteins = String(n.proteins);
+				}
+
+				if (n.salt !== undefined) {
+					body.nutriment_salt = String(n.salt);
+				}
 			}
 
 			if (args.extra_fields) {
@@ -148,10 +218,22 @@ Use upload_image afterwards to attach photos of the front, ingredients panel, an
 						number_of_units: p.number_of_units,
 						shape: {id: p.shape},
 					};
-					if (p.material !== undefined) c.material = {id: p.material};
-					if (p.recycling !== undefined) c.recycling = {id: p.recycling};
-					if (p.quantity_per_unit !== undefined) c.quantity_per_unit = p.quantity_per_unit;
-					if (p.weight_measured !== undefined) c.weight_measured = p.weight_measured;
+					if (p.material !== undefined) {
+						c.material = {id: p.material};
+					}
+
+					if (p.recycling !== undefined) {
+						c.recycling = {id: p.recycling};
+					}
+
+					if (p.quantity_per_unit !== undefined) {
+						c.quantity_per_unit = p.quantity_per_unit;
+					}
+
+					if (p.weight_measured !== undefined) {
+						c.weight_measured = p.weight_measured;
+					}
+
 					return c;
 				});
 				results.packagings = await offJsonBody(config, 'PATCH', `/api/v3/product/${args.barcode}`, {
