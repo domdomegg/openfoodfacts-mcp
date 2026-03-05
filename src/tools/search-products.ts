@@ -18,9 +18,9 @@ const DEFAULT_FIELDS = [
 
 const inputSchema = strictSchemaWithAliases(
 	{
-		query: z.string().optional().describe('Full-text search query'),
-		categories_tags: z.string().optional().describe('Filter by category tag (e.g. "en:breakfast-cereals")'),
-		brands_tags: z.string().optional().describe('Filter by brand tag (e.g. "nestle")'),
+		query: z.string().optional().describe('Search terms. Strict AND: every word must exist in the product\'s indexed keywords, so prefer 2-3 distinctive words over the full product name. Use words as they appear on the pack (don\'t strip plurals or possessives — the search normalizes both sides). Put brand names in brands_tags instead of here.'),
+		categories_tags: z.string().optional().describe('Filter by category tag (e.g. "en:breakfast-cereals", "en:tomatoes"). Best way to find fresh produce: text-searching "banana" matches thousands of banana-flavoured products, but categories_tags "en:bananas" finds actual bananas.'),
+		brands_tags: z.string().optional().describe('Filter by brand. Input is normalized, so "sainsburys", "sainsbury\'s", "sainsbury-s" all match the same brand — no need to know the exact tag slug. More reliable than putting the brand in the query text.'),
 		nutrition_grades_tags: z.string().optional().describe('Filter by Nutri-Score grade (a, b, c, d, e)'),
 		sort_by: z.enum([
 			'popularity',
@@ -45,7 +45,16 @@ export function registerSearchProducts(server: McpServer, config: Config): void 
 		'search_products',
 		{
 			title: 'Search products',
-			description: 'Search the Open Food Facts database by name or keywords. Supports full-text search and filtering by category, brand, and Nutri-Score. Use get_product to see full details for a specific product.',
+			description: `Search the Open Food Facts database. If you have a barcode, use get_product instead — it's always current and skips search entirely.
+
+How search works: strict AND against a keyword array built from product_name, generic_name, brands, categories, origins, labels. One unmatched query word means zero results. The search backend syncs with a delay, so recently-edited products may only match their older keywords.
+
+If you get zero results:
+- Drop words and retry — fewer terms, fewer chances to miss.
+- Move the brand to brands_tags and search just the distinctive product words.
+- Consider asking the user to photograph the barcode so you can use get_product instead.
+
+All food types are covered, including packaged fresh produce (supermarket tomatoes, bagged salad, etc.). For fresh produce, use brands_tags plus a variety name ("baby plum", "cherry vine") or brands_tags plus categories_tags, rather than generic text search.`,
 			inputSchema,
 			annotations: {
 				readOnlyHint: true,

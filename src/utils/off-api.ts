@@ -95,18 +95,54 @@ export async function offPostMultipart(
 	return text ? JSON.parse(text) : {status: 1};
 }
 
+// v3 API endpoints (e.g. PATCH /api/v3/product/{code}) require a raw JSON body
+// with credentials at the top level, not form-encoded fields.
+export async function offJsonBody(
+	config: Config,
+	method: string,
+	endpoint: string,
+	body: Record<string, unknown>,
+): Promise<unknown> {
+	if (!config.userId || !config.password) {
+		throw new Error('OFF_USER_ID and OFF_PASSWORD are required for write operations');
+	}
+
+	const response = await fetch(`${getBaseUrl(config)}${endpoint}`, {
+		method,
+		headers: {
+			'User-Agent': config.userAgent,
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({
+			user_id: config.userId,
+			password: config.password,
+			...body,
+		}),
+	});
+
+	if (!response.ok) {
+		await handleApiError(response);
+	}
+
+	return response.json();
+}
+
 export async function offRequest(
 	config: Config,
 	method: string,
 	endpoint: string,
 	params?: Record<string, string>,
-	body?: Record<string, string>,
+	jsonBody?: Record<string, unknown>,
 ): Promise<unknown> {
 	if (method === 'GET') {
 		return offGet(config, endpoint, params);
 	}
 
-	const mergedBody = {...params, ...body};
+	if (jsonBody !== undefined) {
+		return offJsonBody(config, method, endpoint, jsonBody);
+	}
+
+	const mergedBody = {...params};
 
 	if (config.userId && config.password) {
 		mergedBody.user_id = config.userId;
