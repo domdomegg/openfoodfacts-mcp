@@ -34,7 +34,7 @@ export function registerGetProduct(server: McpServer, config: Config): void {
 		'get_product',
 		{
 			title: 'Get product',
-			description: 'Get product information from Open Food Facts by barcode.',
+			description: 'Get product information from Open Food Facts by barcode. Reads the primary database directly (no sync lag), so this is always current even when search_products returns stale results. Prefer this over search whenever you have a barcode. If this returns "product not found", the product genuinely isn\'t in the database — you can add it with add_or_edit_product.',
 			inputSchema,
 			annotations: {
 				readOnlyHint: true,
