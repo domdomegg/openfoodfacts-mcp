@@ -53,7 +53,7 @@ const transport = process.env.MCP_TRANSPORT || 'stdio';
 		console.error('openfoodfacts-mcp running on stdio');
 	} else if (transport === 'http') {
 		const app = express();
-		app.use(express.json());
+		app.use(express.json({limit: '20mb'}));
 
 		const port = parseInt(process.env.PORT || '3000', 10);
 		const baseUrl = process.env.MCP_BASE_URL || `http://localhost:${port}`;
