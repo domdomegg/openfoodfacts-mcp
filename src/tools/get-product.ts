@@ -109,6 +109,7 @@ const inputSchema = strictSchemaWithAliases(
 	{
 		barcode: z.string().describe('Product barcode (EAN-13, UPC-A, etc.)'),
 		fields: z.array(z.string()).optional().describe(`Fields to return. Defaults to: ${DEFAULT_FIELDS.join(', ')}`),
+		language: z.string().default('en').describe('Language code for language-dependent fields (product_name, generic_name, ingredients_text). Defaults to "en". When a product has a different primary language, the unsuffixed field names return that language\'s data — this param ensures you get the language you want.'),
 	},
 	{
 		code: 'barcode',
@@ -129,38 +130,40 @@ export function registerGetProduct(server: McpServer, config: Config): void {
 		},
 		async (args) => {
 			const fields = args.fields ?? DEFAULT_FIELDS;
+			const lang = args.language as string;
 
-			// For language-dependent fields, also request the _en version so we
-			// can prefer English data regardless of the product's primary language.
-			const enFields: string[] = [];
+			// For language-dependent fields, also request the lang-suffixed version
+			// so we can prefer the requested language regardless of the product's
+			// primary language.
+			const langFields: string[] = [];
 			for (const field of fields) {
 				if (LANGUAGE_DEPENDENT_FIELDS.includes(field)) {
-					enFields.push(`${field}_en`);
+					langFields.push(`${field}_${lang}`);
 				}
 			}
 
-			const allFields = [...fields, ...enFields];
+			const allFields = [...fields, ...langFields];
 			const params: Record<string, string> = {
 				fields: allFields.join(','),
 			};
 
 			const data = await offGet(config, `/api/v2/product/${args.barcode}.json`, params) as Record<string, unknown>;
 
-			// Prefer _en values over unsuffixed (which map to the product's primary
-			// language and may not be English).
+			// Prefer lang-suffixed values over unsuffixed (which map to the product's
+			// primary language and may not be what was requested).
 			const product = data.product as Record<string, unknown> | undefined;
 			if (product) {
 				for (const field of LANGUAGE_DEPENDENT_FIELDS) {
-					const enKey = `${field}_en`;
-					if (product[enKey] !== undefined && product[enKey] !== null && product[enKey] !== '') {
-						product[field] = product[enKey];
+					const langKey = `${field}_${lang}`;
+					if (product[langKey] !== undefined && product[langKey] !== null && product[langKey] !== '') {
+						product[field] = product[langKey];
 					}
 
-					// Remove the _en field from output to keep response clean,
+					// Remove the lang-suffixed field from output to keep response clean,
 					// unless the caller explicitly requested it.
-					if (!fields.includes(enKey)) {
+					if (!fields.includes(langKey)) {
 						// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-						delete product[enKey];
+						delete product[langKey];
 					}
 				}
 			}

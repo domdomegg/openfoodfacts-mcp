@@ -78,6 +78,7 @@ const inputSchema = strictSchemaWithAliases(
 
 		// Edit metadata
 		comment: z.string().optional().describe('Edit comment explaining what was changed, shown in product edit history. E.g. "Add nutrition data from packaging photo".'),
+		language: z.string().default('en').describe('Language code for language-dependent fields (product_name, generic_name, ingredients_text). Defaults to "en". Set to "fr" for French products, etc. This determines which language version of these fields is written.'),
 
 		// Escape hatch for anything not covered above
 		extra_fields: z.record(z.string()).optional().describe('Raw form fields for anything else. Useful for less common nutriments (nutriment_sodium, nutriment_calcium, nutriment_vitamin-c) or fields not exposed above. Values are strings.'),
@@ -164,10 +165,10 @@ Nutrition fields mirror the label columns: nutrition (per 100g as sold), nutriti
 		async (args) => {
 			const body: Record<string, string> = {
 				code: args.barcode,
-				// Always write in English so language-dependent fields (product_name,
-				// generic_name, ingredients_text) are stored under _en suffixes
+				// Set lc so language-dependent fields (product_name, generic_name,
+				// ingredients_text) are stored under the correct language suffix
 				// regardless of the product's primary language.
-				lc: 'en',
+				lc: args.language as string,
 			};
 
 			if (args.product_name !== undefined) {
