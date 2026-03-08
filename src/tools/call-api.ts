@@ -39,7 +39,9 @@ Two body modes for writes:
 Example v3 packagings write:
   method: PATCH
   endpoint: /api/v3/product/0123456789012
-  json_body: {"fields":"packagings","product":{"packagings":[{"number_of_units":1,"shape":{"id":"en:bag"},"material":{"id":"en:plastic"},"recycling":{"id":"en:recycle"}}]}}`,
+  json_body: {"fields":"packagings","product":{"packagings":[{"number_of_units":1,"shape":{"id":"en:bag"},"material":{"id":"en:plastic"},"recycling":{"id":"en:recycle"}}]}}
+
+WARNING: Do NOT use old-style prepared nutrition params like nutriment_fat_prepared — they have a known server bug that stores data incorrectly. Use new-style params instead: nutrition_input_sets_prepared_100g_nutrients_fat_value_string=0.5`,
 			inputSchema,
 			annotations: {
 				readOnlyHint: false,
