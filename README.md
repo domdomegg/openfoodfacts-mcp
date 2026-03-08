@@ -54,7 +54,8 @@ claude mcp add --transport http openfoodfacts-mcp http://localhost:3000/mcp
 | Tool | Description | Auth |
 |------|-------------|------|
 | `get_product` | Get product info by barcode | No |
-| `search_products` | Search products by name or keyword | No |
+| `search_products_standard` | Search with structured filters (brand, category, Nutri-Score) | No |
+| `search_products_lucene` | Search with Lucene syntax, negation, and boolean logic | No |
 | `autocomplete` | Autocomplete brands, categories, labels, etc. | No |
 | `add_or_edit_product` | Add or update a product | Yes |
 | `upload_image` | Upload a product image | Yes |
