@@ -67,7 +67,7 @@ describe('get_product', () => {
 
 		const url = new URL(mockFetch.mock.calls[0]![0] as string);
 		// product_name is language-dependent, so _en version is also requested
-	expect(url.searchParams.get('fields')).toBe('product_name,brands,product_name_en');
+		expect(url.searchParams.get('fields')).toBe('product_name,brands,product_name_en');
 	});
 
 	it('prefers _en fields over unsuffixed for language-dependent fields', async () => {

@@ -159,6 +159,7 @@ export function registerGetProduct(server: McpServer, config: Config): void {
 					// Remove the _en field from output to keep response clean,
 					// unless the caller explicitly requested it.
 					if (!fields.includes(enKey)) {
+						// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 						delete product[enKey];
 					}
 				}
