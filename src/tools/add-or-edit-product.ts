@@ -43,10 +43,10 @@ const inputSchema = strictSchemaWithAliases(
 		barcode: z.string().describe('Product barcode (EAN-13, UPC-A, EAN-8, etc.). Required. If the product doesn\'t exist yet, it will be created.'),
 
 		// Identity — these feed the search index (_keywords)
-		product_name: z.string().optional().describe('Product name as printed on the front of pack, e.g. "Boneless Wild Pink Salmon Fillets". Feeds search keywords.'),
+		product_name: z.string().optional().describe('Product name as it should appear in search results. Start from what\'s printed on the front of pack, but include the product type if it\'s not in the headline but is integral to the product — e.g. pack says "Fajita Halloumi" but it\'s a wrap, so use "High Protein Fajita Halloumi Wrap". Feeds search keywords.'),
 		generic_name: z.string().optional().describe('Legal name / product description, often found near the ingredients, e.g. "Carbonated no added sugar pineapple and grapefruit flavoured soft drink with sweeteners". Feeds search keywords.'),
 		brands: z.string().optional().describe('Brand name(s), comma-separated. For supermarket own-brands include both the sub-brand and the retailer, e.g. "The Fishmonger, Aldi" — this makes the product findable by either brand tag. Feeds search keywords.'),
-		quantity: z.string().optional().describe('Net quantity as printed, e.g. "400g", "6 x 330ml", "1L". OFF parses this into product_quantity automatically.'),
+		quantity: z.string().optional().describe('Net quantity as printed, e.g. "400g", "6 x 330ml", "1L". OFF parses this into product_quantity automatically. Always set this — it is separate from serving_size and OFF will warn "quantity undefined" without it.'),
 
 		// Classification — also feeds _keywords
 		categories: z.string().optional().describe('Categories, comma-separated, most general first, e.g. "Seafood, Fishes, Salmons, Frozen fishes". Feeds search keywords and enables category browsing.'),
@@ -148,8 +148,8 @@ Pitfalls learned the hard way:
 
 Recommended workflow for adding a product from photos:
 1. Check if product exists with get_product first to avoid overwriting good data
-2. Upload photos with upload_image (front, back/nutrition, ingredients panels)
-3. Call this tool with all fields you can read from the photos
+2. Upload photos with upload_image. Prefer more photos over fewer — panels with text (ingredients, nutrition, certifications, recycling instructions) are highest value as OFF can OCR them. Plain sides with just a colour or logo are lowest value but still worth uploading if you have them. Use the most appropriate imagefield (front, ingredients, nutrition, packaging) and "other" for the rest.
+3. Call this tool with all fields you can read from the photos. Set both quantity and serving_size.
 4. Set packagings_complete: true only when all packaging components are listed
 
 For products with only prepared nutrition (jelly mixes, powdered drinks, etc.), use nutrition_prepared instead of nutrition.

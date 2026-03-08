@@ -29,7 +29,7 @@ export function registerUploadImage(server: McpServer, config: Config): void {
 		'upload_image',
 		{
 			title: 'Upload product image',
-			description: 'Upload a product image to Open Food Facts. Requires OFF_USER_ID and OFF_PASSWORD.',
+			description: 'Upload a product image to Open Food Facts. Requires OFF_USER_ID and OFF_PASSWORD.\n\nPrefer more photos over fewer. Panels with text (ingredients, nutrition, certifications, recycling instructions) are highest value as OFF can OCR them. Plain sides with just a colour or logo are lowest value but still worth uploading if you have them. Use the most appropriate imagefield (front, ingredients, nutrition, packaging), and use "other" for the rest.',
 			inputSchema,
 			annotations: {
 				readOnlyHint: false,
