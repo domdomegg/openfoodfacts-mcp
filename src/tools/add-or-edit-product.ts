@@ -164,6 +164,10 @@ Nutrition fields mirror the label columns: nutrition (per 100g as sold), nutriti
 		async (args) => {
 			const body: Record<string, string> = {
 				code: args.barcode,
+				// Always write in English so language-dependent fields (product_name,
+				// generic_name, ingredients_text) are stored under _en suffixes
+				// regardless of the product's primary language.
+				lc: 'en',
 			};
 
 			if (args.product_name !== undefined) {

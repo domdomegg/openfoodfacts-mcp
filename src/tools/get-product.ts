@@ -20,6 +20,13 @@ const DEFAULT_FIELDS = [
 ];
 
 /**
+ * Language-dependent fields where the unsuffixed version (e.g. "product_name")
+ * maps to the product's primary language, not necessarily English.
+ * We request both the unsuffixed and _en versions so we always get English data.
+ */
+const LANGUAGE_DEPENDENT_FIELDS = ['product_name', 'generic_name', 'ingredients_text'];
+
+/**
  * The core nutrients we extract when restructuring the nutriments blob.
  * Maps from a display name to the OFF API prefix.
  */
@@ -122,14 +129,42 @@ export function registerGetProduct(server: McpServer, config: Config): void {
 		},
 		async (args) => {
 			const fields = args.fields ?? DEFAULT_FIELDS;
+
+			// For language-dependent fields, also request the _en version so we
+			// can prefer English data regardless of the product's primary language.
+			const enFields: string[] = [];
+			for (const field of fields) {
+				if (LANGUAGE_DEPENDENT_FIELDS.includes(field)) {
+					enFields.push(`${field}_en`);
+				}
+			}
+
+			const allFields = [...fields, ...enFields];
 			const params: Record<string, string> = {
-				fields: fields.join(','),
+				fields: allFields.join(','),
 			};
 
 			const data = await offGet(config, `/api/v2/product/${args.barcode}.json`, params) as Record<string, unknown>;
 
-			// Restructure the flat nutriments blob into a readable nested format
+			// Prefer _en values over unsuffixed (which map to the product's primary
+			// language and may not be English).
 			const product = data.product as Record<string, unknown> | undefined;
+			if (product) {
+				for (const field of LANGUAGE_DEPENDENT_FIELDS) {
+					const enKey = `${field}_en`;
+					if (product[enKey] !== undefined && product[enKey] !== null && product[enKey] !== '') {
+						product[field] = product[enKey];
+					}
+
+					// Remove the _en field from output to keep response clean,
+					// unless the caller explicitly requested it.
+					if (!fields.includes(enKey)) {
+						delete product[enKey];
+					}
+				}
+			}
+
+			// Restructure the flat nutriments blob into a readable nested format
 			if (product?.nutriments) {
 				product.nutriments = restructureNutriments(product.nutriments as Record<string, unknown>);
 			}

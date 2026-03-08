@@ -66,7 +66,54 @@ describe('get_product', () => {
 		});
 
 		const url = new URL(mockFetch.mock.calls[0]![0] as string);
-		expect(url.searchParams.get('fields')).toBe('product_name,brands');
+		// product_name is language-dependent, so _en version is also requested
+	expect(url.searchParams.get('fields')).toBe('product_name,brands,product_name_en');
+	});
+
+	it('prefers _en fields over unsuffixed for language-dependent fields', async () => {
+		mockFetch.mockResolvedValueOnce({
+			ok: true,
+			json: async () => ({
+				status: 1,
+				product: {
+					product_name: 'Nom français',
+					product_name_en: 'English Name',
+					ingredients_text: 'Ingrédients en français',
+					ingredients_text_en: 'Ingredients in English',
+				},
+			}),
+		});
+
+		const {meta, handler} = getRegisteredTool('get_product');
+		const result = await callWithValidation(meta.inputSchema, handler, {barcode: '12345678'});
+		const parsed = JSON.parse((result.content[0] as {text: string}).text);
+
+		expect(parsed.product.product_name).toBe('English Name');
+		expect(parsed.product.ingredients_text).toBe('Ingredients in English');
+		// _en fields should be removed from output (not explicitly requested)
+		expect(parsed.product.product_name_en).toBeUndefined();
+		expect(parsed.product.ingredients_text_en).toBeUndefined();
+	});
+
+	it('falls back to unsuffixed when _en is empty', async () => {
+		mockFetch.mockResolvedValueOnce({
+			ok: true,
+			json: async () => ({
+				status: 1,
+				product: {
+					product_name: 'Some Name',
+					product_name_en: '',
+					ingredients_text: 'Some ingredients',
+				},
+			}),
+		});
+
+		const {meta, handler} = getRegisteredTool('get_product');
+		const result = await callWithValidation(meta.inputSchema, handler, {barcode: '12345678'});
+		const parsed = JSON.parse((result.content[0] as {text: string}).text);
+
+		expect(parsed.product.product_name).toBe('Some Name');
+		expect(parsed.product.ingredients_text).toBe('Some ingredients');
 	});
 
 	it('restructures nutriments into nested format', async () => {
