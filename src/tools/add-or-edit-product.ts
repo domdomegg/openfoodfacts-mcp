@@ -17,8 +17,7 @@ const packagingComponentSchema = z.object({
 /** Nutrient value: a number, or a string with a modifier like "< 0.5", "> 1", "~ 3". */
 const nutrientValue = z.union([z.number(), z.string()]).optional();
 
-const nutritionSchema = z.object({
-	per: z.enum(['100g', '100ml', 'serving']).default('100g').describe('Whether the values below are per 100g, per 100ml, or per serving. Almost always "100g" for UK/EU products. Use "100ml" for beverages where the label says per 100ml.'),
+const nutrientFields = {
 	energy_kj: nutrientValue.describe('Energy in kJ. Provide this if it is on the packaging.'),
 	energy_kcal: nutrientValue,
 	fat: nutrientValue,
@@ -28,6 +27,15 @@ const nutritionSchema = z.object({
 	fiber: nutrientValue,
 	proteins: nutrientValue,
 	salt: nutrientValue,
+};
+
+const nutritionSchema = z.object({
+	per: z.enum(['100g', '100ml']).default('100g').describe('Whether the values below are per 100g or per 100ml. Almost always "100g" for UK/EU products. Use "100ml" for beverages where the label says per 100ml.'),
+	...nutrientFields,
+});
+
+const nutritionPerServingSchema = z.object({
+	...nutrientFields,
 });
 
 const inputSchema = strictSchemaWithAliases(
@@ -62,9 +70,11 @@ const inputSchema = strictSchemaWithAliases(
 		packaging_text: z.string().optional().describe('Recycling instructions and/or packaging information as printed on the pack, e.g. "Tray - Plastic - Recycle\\nFilm - Plastic - Do Not Recycle". This is the human-readable text, separate from the structured packagings array.'),
 
 		// Nutrition
-		serving_size: z.string().optional().describe('Serving size as printed, e.g. "30g", "100g (1 fillet)", "330ml (1 can)". OFF uses this to derive per-serving values from per-100g.'),
-		nutrition: nutritionSchema.optional().describe('Nutrition facts as sold. Transcribe per-100g values exactly as printed — don\'t back-calculate from per-serving (causes repeating decimals like 53.666...g and triggers quality warnings). If you only have per-serving values, set per: "serving". For values printed as "< 0.5g" on the packet, pass the string "< 0.5" — the less-than modifier will be preserved.'),
-		nutrition_prepared: nutritionSchema.optional().describe('Nutrition facts as prepared — for products like jelly mixes, powdered drinks, instant noodles, or anything where the packet shows separate "as prepared" nutrition values. Same fields as nutrition. Use this instead of (or alongside) nutrition when the product has prepared nutrition info.'),
+		serving_size: z.string().optional().describe('Serving size as printed, e.g. "30g", "100g (1 fillet)", "330ml (1 can)". OFF uses this to derive per-serving values from per-100g when per-serving values are not provided explicitly.'),
+		nutrition: nutritionSchema.optional().describe('Nutrition facts as sold, per 100g (or per 100ml for beverages). Transcribe per-100g values exactly as printed — don\'t back-calculate from per-serving. For values printed as "< 0.5g" on the packet, pass the string "< 0.5" — the less-than modifier will be preserved.'),
+		nutrition_per_serving: nutritionPerServingSchema.optional().describe('Nutrition facts as sold, per serving. Use this when the label shows a separate per-serving column alongside per-100g. If omitted and serving_size is set, OFF auto-derives per-serving from per-100g values.'),
+		nutrition_prepared: nutritionSchema.optional().describe('Nutrition facts as prepared, per 100g (or per 100ml). For products like jelly mixes, powdered drinks, instant noodles — anything where the packet shows separate "as prepared" nutrition values.'),
+		nutrition_prepared_per_serving: nutritionPerServingSchema.optional().describe('Nutrition facts as prepared, per serving. Use this when the label shows a separate per-serving column for prepared values.'),
 
 		// Edit metadata
 		comment: z.string().optional().describe('Edit comment explaining what was changed, shown in product edit history. E.g. "Add nutrition data from packaging photo".'),
@@ -143,7 +153,9 @@ Recommended workflow for adding a product from photos:
 4. Set packagings_complete: true only when all packaging components are listed
 
 For products with only prepared nutrition (jelly mixes, powdered drinks, etc.), use nutrition_prepared instead of nutrition.
-For values printed as "< 0.5g" on the packet, pass the string "< 0.5" — the less-than modifier will be preserved.`,
+For values printed as "< 0.5g" on the packet, pass the string "< 0.5" — the less-than modifier will be preserved.
+
+Nutrition fields mirror the label columns: nutrition (per 100g as sold), nutrition_per_serving (per serving as sold), nutrition_prepared (per 100g prepared), nutrition_prepared_per_serving (per serving prepared). OFF auto-derives per-serving from per-100g + serving_size, so nutrition_per_serving is only needed when the label shows explicit per-serving values you want to preserve.`,
 			inputSchema,
 			annotations: {
 				readOnlyHint: false,
@@ -226,8 +238,16 @@ For values printed as "< 0.5g" on the packet, pass the string "< 0.5" — the le
 				addNutritionParams(body, args.nutrition as Record<string, unknown>, 'as_sold');
 			}
 
+			if (args.nutrition_per_serving) {
+				addNutritionParams(body, {...args.nutrition_per_serving as Record<string, unknown>, per: 'serving'}, 'as_sold');
+			}
+
 			if (args.nutrition_prepared) {
 				addNutritionParams(body, args.nutrition_prepared as Record<string, unknown>, 'prepared');
+			}
+
+			if (args.nutrition_prepared_per_serving) {
+				addNutritionParams(body, {...args.nutrition_prepared_per_serving as Record<string, unknown>, per: 'serving'}, 'prepared');
 			}
 
 			if (args.extra_fields) {
