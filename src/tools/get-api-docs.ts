@@ -45,7 +45,29 @@ POST /cgi/product_jqm2.pl
 - Content-Type: application/x-www-form-urlencoded
 - Body: code (barcode), user_id, password, and any product fields to set
 - Fields: product_name, brands, categories, labels, quantity, ingredients_text, packaging, stores, countries
-- Nutriment fields: nutriment_{name}_{unit} (e.g. nutriment_energy_kcal, nutriment_fat_g)
+
+#### Nutrition parameters (new-style — recommended)
+Use new-style nutrition params for both as-sold and prepared nutrition:
+  nutrition_input_sets_{preparation}_{per}_nutrients_{nid}_value_string={value}
+
+Where:
+- {preparation}: "as_sold" or "prepared"
+- {per}: "100g", "100ml", or "serving"
+- {nid}: nutrient ID using hyphens: energy-kj, energy-kcal, fat, saturated-fat, carbohydrates, sugars, fiber, proteins, salt
+- {value}: number or prefixed string like "< 0.5", "> 1", "~ 3"
+
+Examples:
+  nutrition_input_sets_as_sold_100g_nutrients_fat_value_string=3.2
+  nutrition_input_sets_prepared_100g_nutrients_energy-kcal_value_string=85
+  nutrition_input_sets_as_sold_serving_nutrients_sugars_value_string=< 0.5
+
+WARNING: Do NOT use old-style prepared nutrition params like nutriment_fat_prepared or
+nutriment_energy-kcal_prepared. These have a known server bug that stores data incorrectly
+(values end up in the wrong fields). Always use the new-style params above for prepared nutrition.
+
+#### Legacy nutrition parameters (old-style)
+The old-style params (nutriment_fat, nutriment_energy-kj, etc.) still work for as-sold values
+but are NOT recommended for prepared nutrition due to the bug described above.
 
 ### Upload product image
 POST /cgi/product_image_upload.pl

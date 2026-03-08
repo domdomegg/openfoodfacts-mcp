@@ -14,6 +14,22 @@ const packagingComponentSchema = z.object({
 	weight_measured: z.number().optional().describe('Empty weight of one unit in grams (if you weighed it)'),
 });
 
+/** Nutrient value: a number, or a string with a modifier like "< 0.5", "> 1", "~ 3". */
+const nutrientValue = z.union([z.number(), z.string()]).optional();
+
+const nutritionSchema = z.object({
+	per: z.enum(['100g', '100ml', 'serving']).default('100g').describe('Whether the values below are per 100g, per 100ml, or per serving. Almost always "100g" for UK/EU products. Use "100ml" for beverages where the label says per 100ml.'),
+	energy_kj: nutrientValue.describe('Energy in kJ. Always provide this alongside kcal — OFF flags mismatches as data quality issues.'),
+	energy_kcal: nutrientValue,
+	fat: nutrientValue,
+	saturated_fat: nutrientValue,
+	carbohydrates: nutrientValue,
+	sugars: nutrientValue,
+	fiber: nutrientValue,
+	proteins: nutrientValue,
+	salt: nutrientValue,
+});
+
 const inputSchema = strictSchemaWithAliases(
 	{
 		barcode: z.string().describe('Product barcode (EAN-13, UPC-A, EAN-8, etc.). Required. If the product doesn\'t exist yet, it will be created.'),
@@ -42,21 +58,16 @@ const inputSchema = strictSchemaWithAliases(
 
 		// Packaging — uses v3 PATCH under the hood; this is what the web UI actually renders
 		packagings: z.array(packagingComponentSchema).optional().describe('Structured packaging components. Each item describes one physical part of the packaging (outer box, inner bag, lid, etc.). This populates the packagings array the UI displays and feeds the Eco-Score. Use taxonomy IDs ("en:box") not free text.'),
+		packagings_complete: z.boolean().optional().describe('Set to true to mark that all packaging components have been listed. Only set this when you are confident the packagings array is complete.'),
+		packaging_text: z.string().optional().describe('Recycling instructions and/or packaging information as printed on the pack, e.g. "Tray - Plastic - Recycle\\nFilm - Plastic - Do Not Recycle". This is the human-readable text, separate from the structured packagings array.'),
 
 		// Nutrition
 		serving_size: z.string().optional().describe('Serving size as printed, e.g. "30g", "100g (1 fillet)", "330ml (1 can)". OFF uses this to derive per-serving values from per-100g.'),
-		nutrition: z.object({
-			per: z.enum(['100g', 'serving']).default('100g').describe('Whether the values below are per 100g/100ml or per serving. Almost always "100g" for UK/EU products.'),
-			energy_kj: z.number().optional().describe('Energy in kJ. Always provide this alongside kcal — OFF flags mismatches as data quality issues.'),
-			energy_kcal: z.number().optional(),
-			fat: z.number().optional(),
-			saturated_fat: z.number().optional(),
-			carbohydrates: z.number().optional(),
-			sugars: z.number().optional(),
-			fiber: z.number().optional(),
-			proteins: z.number().optional(),
-			salt: z.number().optional(),
-		}).optional().describe('Nutrition facts. Transcribe per-100g values exactly as printed — don\'t back-calculate from per-serving (causes repeating decimals like 53.666...g and triggers quality warnings). If you only have per-serving values, set per: "serving".'),
+		nutrition: nutritionSchema.optional().describe('Nutrition facts as sold. Transcribe per-100g values exactly as printed — don\'t back-calculate from per-serving (causes repeating decimals like 53.666...g and triggers quality warnings). If you only have per-serving values, set per: "serving". For values printed as "< 0.5g" on the packet, pass the string "< 0.5" — the less-than modifier will be preserved.'),
+		nutrition_prepared: nutritionSchema.optional().describe('Nutrition facts as prepared — for products like jelly mixes, powdered drinks, instant noodles, or anything where the packet shows separate "as prepared" nutrition values. Same fields as nutrition. Use this instead of (or alongside) nutrition when the product has prepared nutrition info.'),
+
+		// Edit metadata
+		comment: z.string().optional().describe('Edit comment explaining what was changed, shown in product edit history. E.g. "Add nutrition data from packaging photo".'),
 
 		// Escape hatch for anything not covered above
 		extra_fields: z.record(z.string()).optional().describe('Raw form fields for anything else. Useful for less common nutriments (nutriment_sodium, nutriment_calcium, nutriment_vitamin-c) or fields not exposed above. Values are strings.'),
@@ -65,6 +76,46 @@ const inputSchema = strictSchemaWithAliases(
 		code: 'barcode',
 	},
 );
+
+/**
+ * Map from schema field names to OFF API nutrient IDs.
+ * Note: API nutrient IDs use hyphens (e.g. "saturated-fat"), not underscores.
+ */
+const nutrientIdMap: Record<string, string> = {
+	energy_kj: 'energy-kj',
+	energy_kcal: 'energy-kcal',
+	fat: 'fat',
+	saturated_fat: 'saturated-fat',
+	carbohydrates: 'carbohydrates',
+	sugars: 'sugars',
+	fiber: 'fiber',
+	proteins: 'proteins',
+	salt: 'salt',
+};
+
+/**
+ * Add new-style nutrition params to the request body.
+ *
+ * New-style param format:
+ *   nutrition_input_sets_{preparation}_{per}_nutrients_{nid}_value_string={value}
+ *
+ * Where preparation is "as_sold" or "prepared", per is "100g"/"100ml"/"serving",
+ * and nid uses hyphens (e.g. "saturated-fat").
+ */
+function addNutritionParams(
+	body: Record<string, string>,
+	nutrition: Record<string, unknown>,
+	preparation: 'as_sold' | 'prepared',
+): void {
+	const per = (nutrition.per as string) || '100g';
+	for (const [field, nid] of Object.entries(nutrientIdMap)) {
+		const value = nutrition[field] as string | number | undefined;
+		if (value !== undefined) {
+			const key = `nutrition_input_sets_${preparation}_${per}_nutrients_${nid}_value_string`;
+			body[key] = typeof value === 'number' ? String(value) : value;
+		}
+	}
+}
 
 export function registerAddOrEditProduct(server: McpServer, config: Config): void {
 	server.registerTool(
@@ -85,7 +136,14 @@ Pitfalls learned the hard way:
 - Free-text packaging shapes get fuzzy-matched against the taxonomy. "Pouch" resolves to "en:pouch-flask" (a stand-up spouted pouch). Use taxonomy IDs like "en:bag" or "en:individual-bag" instead.
 - OFF has no generic "pouch" shape in its taxonomy. For vacuum-sealed individual portions use "en:individual-bag"; for plastic film wrap use "en:film".
 
-Use upload_image afterwards to attach photos of the front, ingredients panel, and nutrition table.`,
+Recommended workflow for adding a product from photos:
+1. Check if product exists with get_product first to avoid overwriting good data
+2. Upload photos with upload_image (front, back/nutrition, ingredients panels)
+3. Call this tool with all fields you can read from the photos
+4. Set packagings_complete: true only when all packaging components are listed
+
+For products with only prepared nutrition (jelly mixes, powdered drinks, etc.), use nutrition_prepared instead of nutrition.
+For values printed as "< 0.5g" on the packet, pass the string "< 0.5" — the less-than modifier will be preserved.`,
 			inputSchema,
 			annotations: {
 				readOnlyHint: false,
@@ -156,44 +214,20 @@ Use upload_image afterwards to attach photos of the front, ingredients panel, an
 				body.serving_size = args.serving_size;
 			}
 
+			if (args.packaging_text !== undefined) {
+				body.packaging_text_en = args.packaging_text;
+			}
+
+			if (args.comment !== undefined) {
+				body.comment = args.comment;
+			}
+
 			if (args.nutrition) {
-				const n = args.nutrition;
-				body.nutrition_data_per = n.per;
-				if (n.energy_kj !== undefined) {
-					body['nutriment_energy-kj'] = String(n.energy_kj);
-				}
+				addNutritionParams(body, args.nutrition as Record<string, unknown>, 'as_sold');
+			}
 
-				if (n.energy_kcal !== undefined) {
-					body['nutriment_energy-kcal'] = String(n.energy_kcal);
-				}
-
-				if (n.fat !== undefined) {
-					body.nutriment_fat = String(n.fat);
-				}
-
-				if (n.saturated_fat !== undefined) {
-					body['nutriment_saturated-fat'] = String(n.saturated_fat);
-				}
-
-				if (n.carbohydrates !== undefined) {
-					body.nutriment_carbohydrates = String(n.carbohydrates);
-				}
-
-				if (n.sugars !== undefined) {
-					body.nutriment_sugars = String(n.sugars);
-				}
-
-				if (n.fiber !== undefined) {
-					body.nutriment_fiber = String(n.fiber);
-				}
-
-				if (n.proteins !== undefined) {
-					body.nutriment_proteins = String(n.proteins);
-				}
-
-				if (n.salt !== undefined) {
-					body.nutriment_salt = String(n.salt);
-				}
+			if (args.nutrition_prepared) {
+				addNutritionParams(body, args.nutrition_prepared as Record<string, unknown>, 'prepared');
 			}
 
 			if (args.extra_fields) {
@@ -211,34 +245,46 @@ Use upload_image afterwards to attach photos of the front, ingredients panel, an
 
 			// Structured packagings go through v3 PATCH — the v2 form endpoint doesn't
 			// populate the packagings array that the UI reads.
-			if (args.packagings && args.packagings.length > 0) {
+			const needsV3Patch = (args.packagings && (args.packagings as unknown[]).length > 0) || args.packagings_complete !== undefined;
+			if (needsV3Patch) {
 				type PackagingInput = z.infer<typeof packagingComponentSchema>;
-				const components = (args.packagings as PackagingInput[]).map((p) => {
-					const c: Record<string, unknown> = {
-						number_of_units: p.number_of_units,
-						shape: {id: p.shape},
-					};
-					if (p.material !== undefined) {
-						c.material = {id: p.material};
-					}
+				const v3Product: Record<string, unknown> = {};
 
-					if (p.recycling !== undefined) {
-						c.recycling = {id: p.recycling};
-					}
+				if (args.packagings && (args.packagings as unknown[]).length > 0) {
+					const components = (args.packagings as PackagingInput[]).map((p) => {
+						const c: Record<string, unknown> = {
+							number_of_units: p.number_of_units,
+							shape: {id: p.shape},
+						};
+						if (p.material !== undefined) {
+							c.material = {id: p.material};
+						}
 
-					if (p.quantity_per_unit !== undefined) {
-						c.quantity_per_unit = p.quantity_per_unit;
-					}
+						if (p.recycling !== undefined) {
+							c.recycling = {id: p.recycling};
+						}
 
-					if (p.weight_measured !== undefined) {
-						c.weight_measured = p.weight_measured;
-					}
+						if (p.quantity_per_unit !== undefined) {
+							c.quantity_per_unit = p.quantity_per_unit;
+						}
 
-					return c;
-				});
+						if (p.weight_measured !== undefined) {
+							c.weight_measured = p.weight_measured;
+						}
+
+						return c;
+					});
+					v3Product.packagings = components;
+				}
+
+				if (args.packagings_complete !== undefined) {
+					v3Product.packagings_complete = args.packagings_complete ? 1 : 0;
+				}
+
+				const fields = Object.keys(v3Product).join(',');
 				results.packagings = await offJsonBody(config, 'PATCH', `/api/v3/product/${args.barcode}`, {
-					fields: 'packagings',
-					product: {packagings: components},
+					fields,
+					product: v3Product,
 				});
 			}
 
