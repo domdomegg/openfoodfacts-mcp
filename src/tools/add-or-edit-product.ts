@@ -19,7 +19,7 @@ const nutrientValue = z.union([z.number(), z.string()]).optional();
 
 const nutritionSchema = z.object({
 	per: z.enum(['100g', '100ml', 'serving']).default('100g').describe('Whether the values below are per 100g, per 100ml, or per serving. Almost always "100g" for UK/EU products. Use "100ml" for beverages where the label says per 100ml.'),
-	energy_kj: nutrientValue.describe('Energy in kJ. Always provide this alongside kcal — OFF flags mismatches as data quality issues.'),
+	energy_kj: nutrientValue.describe('Energy in kJ. Provide this if it is on the packaging.'),
 	energy_kcal: nutrientValue,
 	fat: nutrientValue,
 	saturated_fat: nutrientValue,

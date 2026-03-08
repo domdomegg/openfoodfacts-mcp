@@ -65,10 +65,6 @@ WARNING: Do NOT use old-style prepared nutrition params like nutriment_fat_prepa
 nutriment_energy-kcal_prepared. These have a known server bug that stores data incorrectly
 (values end up in the wrong fields). Always use the new-style params above for prepared nutrition.
 
-#### Legacy nutrition parameters (old-style)
-The old-style params (nutriment_fat, nutriment_energy-kj, etc.) still work for as-sold values
-but are NOT recommended for prepared nutrition due to the bug described above.
-
 ### Upload product image
 POST /cgi/product_image_upload.pl
 - Content-Type: multipart/form-data
