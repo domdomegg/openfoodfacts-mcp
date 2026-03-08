@@ -6,7 +6,7 @@ import {callWithValidation, getRegisteredTool} from './_test-utils.js';
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
-describe('search_products', () => {
+describe('search_products_standard', () => {
 	beforeEach(() => {
 		mockFetch.mockReset();
 	});
@@ -20,7 +20,7 @@ describe('search_products', () => {
 			}),
 		});
 
-		const {meta, handler} = getRegisteredTool('search_products');
+		const {meta, handler} = getRegisteredTool('search_products_standard');
 		const result = await callWithValidation(meta.inputSchema, handler, {
 			query: 'nutella',
 		}) as {structuredContent: {count: number}};
@@ -41,7 +41,7 @@ describe('search_products', () => {
 			json: async () => ({count: 0, products: []}),
 		});
 
-		const {meta, handler} = getRegisteredTool('search_products');
+		const {meta, handler} = getRegisteredTool('search_products_standard');
 		await callWithValidation(meta.inputSchema, handler, {
 			q: 'chocolate',
 		});
@@ -56,7 +56,7 @@ describe('search_products', () => {
 			json: async () => ({count: 0, products: []}),
 		});
 
-		const {meta, handler} = getRegisteredTool('search_products');
+		const {meta, handler} = getRegisteredTool('search_products_standard');
 		await callWithValidation(meta.inputSchema, handler, {
 			query: 'nutella',
 		});
@@ -75,7 +75,7 @@ describe('search_products', () => {
 			json: async () => ({count: 0, products: []}),
 		});
 
-		const {meta, handler} = getRegisteredTool('search_products');
+		const {meta, handler} = getRegisteredTool('search_products_standard');
 		await callWithValidation(meta.inputSchema, handler, {
 			query: 'nutella',
 			fields: ['product_name', 'nutriments'],
@@ -91,7 +91,7 @@ describe('search_products', () => {
 			json: async () => ({count: 0, products: []}),
 		});
 
-		const {meta, handler} = getRegisteredTool('search_products');
+		const {meta, handler} = getRegisteredTool('search_products_standard');
 		await callWithValidation(meta.inputSchema, handler, {
 			categories_tags: 'en:breakfast-cereals',
 			nutrition_grades_tags: 'a',

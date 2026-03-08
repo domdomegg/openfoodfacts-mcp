@@ -12,11 +12,27 @@ GET /api/v2/product/{barcode}.json
 - Query params: fields (comma-separated list of fields to return)
 - Example: /api/v2/product/3017620422003.json?fields=product_name,brands,nutriscore_grade
 
-### Search products (full-text)
+### Search products — standard (used by search_products_standard)
 GET /cgi/search.pl
 - Query params: search_terms, search_simple=1, action=process, json=1, categories_tags, brands_tags, nutrition_grades_tags, sort_by, page, page_size, fields
 - sort_by options: popularity, product_name, created_t, last_modified_t, nutriscore_score, nova_score
+- Returns: { count, page, page_size, page_count, products: [...] }
+- Strengths: exact counts, generous brand normalization, good popularity sort
+- Limitations: no negation, filter-only queries may time out
 - Example: /cgi/search.pl?search_terms=nutella&search_simple=1&action=process&json=1&fields=product_name,brands
+
+### Search products — Lucene / Search-a-licious (used by search_products_lucene)
+GET https://search.openfoodfacts.org/search
+- Query params: q (Lucene query), page, page_size, fields, sort_by (prefix with - for descending)
+- Lucene syntax: field:"value", -field:"value" (negation), free text, wildcards
+- sort_by fields: unique_scans_n, product_name, created_t, last_modified_t, nutriscore_score, ecoscore_score
+- Returns: { count, page, page_size, page_count, hits: [...], is_count_exact }
+- Strengths: negation queries, filter-only browsing, boolean logic, relevance scoring
+- Limitations: counts capped at 10,000, short sync delay from primary DB, narrower brand matching
+- Examples:
+  q=nutella (text search)
+  q=categories_tags:"en:beverages" nutriscore_grade:a (structured filter)
+  q=-allergens_tags:"en:gluten" categories_tags:"en:breakfast-cereals" (negation)
 
 ### Search products (tag-based filtering only)
 GET /api/v2/search
@@ -30,6 +46,14 @@ GET /api/v3/taxonomy_suggestions
 ### Product images
 Images are available at: https://images.openfoodfacts.org/images/products/{path}/{filename}
 - The path is derived from the barcode (e.g. 301/762/042/2003 for 3017620422003)
+
+### Facets API (browse categories, brands, labels, etc.)
+GET /{facet_type}.json — lists all tags with product counts
+- facet_type: categories, brands, labels, countries, allergens, stores, packaging
+- Returns: { count, tags: [{ id, name, products, url }] }
+- WARNING: Response is NOT paginated and can be very large (brands has 383k entries). Use autocomplete for type-ahead instead.
+- Drill into a facet: GET /category/{slug}.json, /brand/{slug}.json (returns paginated products)
+- Combine facets: GET /category/{cat}/brand/{brand}.json (unreliable, may return 401)
 
 ## Common Product Fields
 product_name, brands, categories, labels, quantity, ingredients_text, allergens, traces,

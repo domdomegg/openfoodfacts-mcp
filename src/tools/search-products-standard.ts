@@ -40,21 +40,23 @@ const inputSchema = strictSchemaWithAliases(
 	},
 );
 
-export function registerSearchProducts(server: McpServer, config: Config): void {
+export function registerSearchProductsStandard(server: McpServer, config: Config): void {
 	server.registerTool(
-		'search_products',
+		'search_products_standard',
 		{
-			title: 'Search products',
-			description: `Search the Open Food Facts database. If you have a barcode, use get_product instead — it's always current and skips search entirely.
+			title: 'Search products (standard)',
+			description: `Search Open Food Facts with structured filters. Best for simple keyword queries and brand/category filtering. Returns exact result counts and well-populated products. If you have a barcode, use get_product instead.
 
-How search works: strict AND against a keyword array built from product_name, generic_name, brands, categories, origins, labels. One unmatched query word means zero results. The search backend syncs with a delay, so recently-edited products may only match their older keywords.
+How search works: strict AND against a keyword index built from product_name, generic_name, brands, categories, origins, labels. One unmatched query word → zero results.
 
-If you get zero results:
-- Drop words and retry — fewer terms, fewer chances to miss.
-- Move the brand to brands_tags and search just the distinctive product words.
-- Consider asking the user to photograph the barcode so you can use get_product instead.
+Tips:
+- Prefer 2-3 distinctive words over the full product name
+- Put brand names in brands_tags, not the query text
+- Brand normalization is generous: "sainsburys", "sainsbury's", "sainsbury-s" all match
+- For fresh produce, use brands_tags + categories_tags rather than text search
+- sort_by=popularity works well here (not supported in search_products_lucene)
 
-All food types are covered, including packaged fresh produce (supermarket tomatoes, bagged salad, etc.). For fresh produce, use brands_tags plus a variety name ("baby plum", "cherry vine") or brands_tags plus categories_tags, rather than generic text search.`,
+If you get zero results, try dropping words or using search_products_lucene which has more flexible text matching.`,
 			inputSchema,
 			annotations: {
 				readOnlyHint: true,

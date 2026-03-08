@@ -20,7 +20,8 @@ describe('tool registration', () => {
 
 	const expectedTools = [
 		'get_product',
-		'search_products',
+		'search_products_standard',
+		'search_products_lucene',
 		'autocomplete',
 		'add_or_edit_product',
 		'upload_image',
@@ -45,7 +46,7 @@ describe('tool registration', () => {
 	}
 
 	it('read tools have readOnlyHint: true', () => {
-		const readTools = ['get_product', 'search_products', 'autocomplete', 'get_api_docs'];
+		const readTools = ['get_product', 'search_products_standard', 'search_products_lucene', 'autocomplete', 'get_api_docs'];
 		for (const name of readTools) {
 			const meta = registeredTools.get(name) as {annotations: {readOnlyHint: boolean}};
 			expect(meta.annotations.readOnlyHint).toBe(true);
