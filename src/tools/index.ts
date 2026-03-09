@@ -9,6 +9,7 @@ import {registerUploadImage} from './upload-image.js';
 import {registerSelectImage} from './select-image.js';
 import {registerCallApi} from './call-api.js';
 import {registerGetApiDocs} from './get-api-docs.js';
+import {registerGetSkill} from './get-skill.js';
 
 export type {Config} from './types.js';
 
@@ -22,4 +23,5 @@ export function registerAll(server: McpServer, config: Config): void {
 	registerSelectImage(server, config);
 	registerCallApi(server, config);
 	registerGetApiDocs(server);
+	registerGetSkill(server);
 }

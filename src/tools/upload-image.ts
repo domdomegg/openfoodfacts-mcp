@@ -29,7 +29,7 @@ export function registerUploadImage(server: McpServer, config: Config): void {
 		'upload_image',
 		{
 			title: 'Upload product image',
-			description: 'Upload a product image to Open Food Facts. Requires OFF_USER_ID and OFF_PASSWORD.\n\nPrefer more photos over fewer. Panels with text (ingredients, nutrition, certifications, recycling instructions) are highest value as OFF can OCR them. Plain sides with just a colour or logo are lowest value but still worth uploading if you have them. Use the most appropriate imagefield (front, ingredients, nutrition, packaging), and use "other" for the rest.',
+			description: 'Upload a product image to Open Food Facts. Requires OFF_USER_ID and OFF_PASSWORD.\n\nPrefer more photos over fewer. Panels with text (ingredients, nutrition, certifications, recycling instructions) are highest value as OFF can OCR them. Plain sides with just a colour or logo are lowest value but still worth uploading if you have them.\n\nUse the most appropriate imagefield (front, ingredients, nutrition, packaging). Use "other" for additional photos — this uploads without selecting the image as a display image, which is useful when a good display image already exists or for supplementary angles.\n\nThe OFF server auto-selects images for front/nutrition/ingredients/packaging on upload unless one is already selected. If you get "status not ok" but a positive imgid, the image uploaded successfully but was not selected (e.g. a display image already exists).\n\nFor images on disk, base64-encode them first (e.g. via shell: `base64 -i photo.jpg`).',
 			inputSchema,
 			annotations: {
 				readOnlyHint: false,
