@@ -10,7 +10,8 @@
   },
   "bin": "dist/main.js",
   "files": [
-    "dist"
+    "dist",
+    ".agents"
   ],
   "mcpName": "io.github.domdomegg/openfoodfacts-mcp",
   "scripts": {
