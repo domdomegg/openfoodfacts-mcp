@@ -16,29 +16,9 @@ MCP server for the [Open Food Facts](https://world.openfoodfacts.org/) API - sea
 
 ## Setup
 
-```bash
-claude mcp add openfoodfacts-mcp -e OFF_USER_AGENT="openfoodfacts-mcp/1.2.0 (you@example.com)" -- npx -y openfoodfacts-mcp
-```
+Follow the instructions on [install-mcp](https://adamjones.me/install-mcp/?config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIm9wZW5mb29kZmFjdHMtbWNwIl0sIm5hbWUiOiJvcGVuZm9vZGZhY3RzIiwiZW52Ijp7Ik9GRl9VU0VSX0FHRU5UIjoib3BlbmZvb2RmYWN0cy1tY3AvMS4yLjAgKHlvdUBleGFtcGxlLmNvbSkifX0=), which generates the right config for your MCP client (Claude Code, Claude Desktop, Cursor, Cline, VS Code, and more).
 
-For write operations (adding/editing products, uploading images), also set:
-
-```bash
-claude mcp add openfoodfacts-mcp \
-  -e OFF_USER_AGENT="openfoodfacts-mcp/1.2.0 (you@example.com)" \
-  -e OFF_USER_ID="your-username" \
-  -e OFF_PASSWORD="your-password" \
-  -- npx -y openfoodfacts-mcp
-```
-
-Or with HTTP transport:
-
-```bash
-# Start the server
-MCP_TRANSPORT=http PORT=3000 OFF_USER_AGENT="openfoodfacts-mcp/1.2.0 (you@example.com)" npx -y openfoodfacts-mcp
-
-# Add to Claude
-claude mcp add --transport http openfoodfacts-mcp http://localhost:3000/mcp
-```
+Set `OFF_USER_AGENT` to identify your app (e.g. `openfoodfacts-mcp/1.2.0 (you@example.com)`). For write operations (adding/editing products, uploading images), also set `OFF_USER_ID` and `OFF_PASSWORD`.
 
 ## Environment Variables
 
