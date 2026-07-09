@@ -35,7 +35,37 @@ describe('get_product', () => {
 		expect(mockFetch).toHaveBeenCalledOnce();
 		const url = new URL(mockFetch.mock.calls[0]![0] as string);
 		expect(url.pathname).toBe('/api/v2/product/3017620422003.json');
-		expect(url.searchParams.get('fields')).toBeTruthy();
+		// By default no `fields` param is sent, so OFF returns ALL fields — nothing
+		// is misleadingly null/absent just because it wasn't requested.
+		expect(url.searchParams.get('fields')).toBeNull();
+	});
+
+	it('returns all fields by default, including the images map', async () => {
+		mockFetch.mockResolvedValueOnce({
+			ok: true,
+			json: async () => ({
+				status: 1,
+				product: {
+					product_name: 'Test',
+					images: {
+						1: {uploader: 'someone'},
+						front_de: {imgid: 1},
+						nutrition_de: {imgid: 3},
+					},
+				},
+			}),
+		});
+
+		const {meta, handler} = getRegisteredTool('get_product');
+		const result = await callWithValidation(meta.inputSchema, handler, {
+			barcode: '12345678',
+		}) as {structuredContent: {product: {images: Record<string, unknown>}}};
+
+		// The images map must survive to the response (regression: it used to be
+		// dropped because `images` wasn't in the requested field list, so agents
+		// checking for existing images saw null and clobbered them).
+		expect(result.structuredContent.product.images).toBeDefined();
+		expect(result.structuredContent.product.images.front_de).toEqual({imgid: 1});
 	});
 
 	it('accepts barcode alias "code"', async () => {
