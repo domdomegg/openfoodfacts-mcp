@@ -5,20 +5,6 @@ import {jsonResult} from '../utils/response.js';
 import {strictSchemaWithAliases} from '../utils/schema.js';
 import {offGet} from '../utils/off-api.js';
 
-const DEFAULT_FIELDS = [
-	'product_name',
-	'brands',
-	'categories',
-	'nutriscore_grade',
-	'nova_group',
-	'ingredients_text',
-	'nutriments',
-	'serving_size',
-	'image_url',
-	'quantity',
-	'code',
-];
-
 /**
  * Language-dependent fields where the unsuffixed version (e.g. "product_name")
  * maps to the product's primary language, not necessarily English.
@@ -108,7 +94,7 @@ function restructureNutriments(nutriments: Record<string, unknown>): Record<stri
 const inputSchema = strictSchemaWithAliases(
 	{
 		barcode: z.string().describe('Product barcode (EAN-13, UPC-A, etc.)'),
-		fields: z.array(z.string()).optional().describe(`Fields to return. Defaults to: ${DEFAULT_FIELDS.join(', ')}`),
+		fields: z.array(z.string()).optional().describe('Fields to return. By default ALL fields are returned — nothing is omitted, so a field is never misleadingly null/absent just because it wasn\'t requested (e.g. `images` is always populated when the product has images). Pass an explicit list only to narrow the otherwise-verbose response.'),
 		language: z.string().default('en').describe('Language code for language-dependent fields (product_name, generic_name, ingredients_text). Defaults to "en". When a product has a different primary language, the unsuffixed field names return that language\'s data — this param ensures you get the language you want.'),
 	},
 	{
@@ -129,23 +115,27 @@ export function registerGetProduct(server: McpServer, config: Config): void {
 			},
 		},
 		async (args) => {
-			const fields = args.fields ?? DEFAULT_FIELDS;
+			const {fields} = args;
 			const lang = args.language as string;
 
-			// For language-dependent fields, also request the lang-suffixed version
-			// so we can prefer the requested language regardless of the product's
-			// primary language.
-			const langFields: string[] = [];
-			for (const field of fields) {
-				if (LANGUAGE_DEPENDENT_FIELDS.includes(field)) {
-					langFields.push(`${field}_${lang}`);
+			// By default we request ALL fields (no `fields` param) so nothing is
+			// misleadingly null/absent just because it wasn't asked for — the whole
+			// product comes back, including the `images` map. Callers can pass an
+			// explicit `fields` list to narrow the (verbose) response.
+			const params: Record<string, string> = {};
+			if (fields) {
+				// For language-dependent fields, also request the lang-suffixed version
+				// so we can prefer the requested language regardless of the product's
+				// primary language.
+				const langFields: string[] = [];
+				for (const field of fields) {
+					if (LANGUAGE_DEPENDENT_FIELDS.includes(field)) {
+						langFields.push(`${field}_${lang}`);
+					}
 				}
-			}
 
-			const allFields = [...fields, ...langFields];
-			const params: Record<string, string> = {
-				fields: allFields.join(','),
-			};
+				params.fields = [...fields, ...langFields].join(',');
+			}
 
 			const data = await offGet(config, `/api/v2/product/${args.barcode}.json`, params) as Record<string, unknown>;
 
@@ -159,9 +149,9 @@ export function registerGetProduct(server: McpServer, config: Config): void {
 						product[field] = product[langKey];
 					}
 
-					// Remove the lang-suffixed field from output to keep response clean,
-					// unless the caller explicitly requested it.
-					if (!fields.includes(langKey)) {
+					// Remove the resolved lang-suffixed field from output to keep the
+					// response clean, unless the caller explicitly requested it.
+					if (!fields?.includes(langKey)) {
 						// eslint-disable-next-line @typescript-eslint/no-dynamic-delete
 						delete product[langKey];
 					}
